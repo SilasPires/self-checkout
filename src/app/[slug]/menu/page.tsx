@@ -1,44 +1,47 @@
-import { ConsumptionMethod } from "@prisma/client";
-import Image from "next/image";
-import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { db } from "@/lib/prisma";
 
-interface ConsumptionMethodOptionProps {
-  slug: string;
-  imageUrl: string;
-  imageAlt: string;
-  buttonText: string;
-  option: ConsumptionMethod;
+import RestaurantCategories from "./components/categories";
+import RestaurantHeader from "./components/header";
+
+interface RestaurantMenuPageProps {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ consumptionMethod: string }>;
 }
 
-const ConsumptionMethodOption = ({
-  slug,
-  imageAlt,
-  imageUrl,
-  buttonText,
-  option,
-}: ConsumptionMethodOptionProps) => {
+const isConsumptionMethodValid = (consumptionMethod: string) => {
+  return ["DINE_IN", "TAKEAWAY"].includes(consumptionMethod.toUpperCase());
+};
+
+const RestaurantMenuPage = async ({
+  params,
+  searchParams,
+}: RestaurantMenuPageProps) => {
+  const { slug } = await params;
+  const { consumptionMethod } = await searchParams;
+  if (!isConsumptionMethodValid(consumptionMethod)) {
+    return notFound();
+  }
+  const restaurant = await db.restaurant.findUnique({
+    where: { slug },
+    include: {
+      menuCategories: {
+        include: { products: true },
+      },
+    },
+  });
+  if (!restaurant) {
+    return notFound();
+  }
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-8 py-8">
-        <div className="relative h-[80px] w-[80px]">
-          <Image
-            src={imageUrl}
-            fill
-            alt={imageAlt}
-            className="object-contain"
-          />
-        </div>
-        <Button variant="secondary" className="rounded-full" asChild>
-          <Link href={`/${slug}/menu?consumptionMethod=${option}`}>
-            {buttonText}
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div>
+      <RestaurantHeader restaurant={restaurant} />
+      <RestaurantCategories restaurant={restaurant} />
+    </div>
   );
 };
 
-export default ConsumptionMethodOption;
+export default RestaurantMenuPage;
+
+// http://localhost:3000/fsw-donalds/menu?consumptionMethod=dine_in

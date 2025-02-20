@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { formatCurrency } from "@/app/helpers/format-currency";
+import { formatCurrency } from "@/helpers/format-currency";
 
 interface ProductsProps {
   products: Product[];
